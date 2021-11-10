@@ -8,40 +8,29 @@
 
 3) Run `npm i`. Note: if you get an error, try running `sudo npm i` on Mac/Linux or running the Command Prompt as Administrator on Windows.
 
-4) Create a file named config.js with the following data:
-```
+4) Copy or rename the `config.sample.js` file to `config.js` and adjust the values:
+```js
 module.exports = {
-	STREAMER: "streamer", (streamer's twitch username)
-	STREAMER_LICHESS: "lichess", (streamer's lichess username)
-	AUTHORIZED_USERS: ["user1", "user2"], (twitch users allowed to use the !setvotingperiod command)
-	TWITCH_OAUTH: "oauth:...", (oauth token for bot's twitch account)
-	LICHESS_OAUTH: "...", (oauth token for bot's lichess account)
-	CHAT_COOLDOWN: 2000, (time in milliseconds to wait between sending messages (1-2 seconds is good) not needed if bot is vip or mod)
-	VOTING_PERIOD: 20, (time in seconds that chat has to vote)
-	ACKNOWLEDGE_VOTE: true (whether or not the twitch bot should acknowledge users' votes in chat)
+  STREAMER_TWITCH: '',				// Streamer's Twitch username
+  STREAMER_LICHESS: '',				// Streamer's Lichess username
+  AUTHORIZED_USERS: [],				// List of usernames that can change the voting period via !setvotingperiod 42
+  BOT_TWITCH_OAUTH: 'oauth:...',	// Bot's Twitch oauth token
+  BOT_LICHESS: '',					// Bot's Lichess account
+  BOT_LICHESS_OAUTH: 'lip_...',		// Bot's Lichess token
+  CHAT_COOLDOWN: 2000,				// Minimum time between chat messages in ms (only really relevant when ACKNOWLEDGE_VOTE is enabled)
+  VOTING_PERIOD: 20,				// Time to vote in s
+  ACKNOWLEDGE_VOTE: false,			// Acknowledge each vote in the chat
 };
 ```
 
-(You can get the twitch oauth token [here](https://twitchapps.com/tmi/), and the lichess oauth token [here](https://lichess.org/api#operation/botAccountUpgrade))
+You can get the twitch oauth token [here](https://twitchapps.com/tmi/).
 
-5) Run `node index.js` to start the bot. The voting page should be at [localhost:3000](localhost:3000) (will be a black screen if there aren't currently any votes).
+5) Run `node index.js` to start the bot. The current votes can be viewed at [localhost:3000](localhost:3000) which can be added as a browser source to OBS. Append `?transparent=true` to the URL to make the background transparent and only show the text.
 
-6) Challenge the lichess bot-it will automatically accept challenges from the `STREAMER_LICHESS` account and instructions will be sent to chat!
+6) Challenge the Lichess bot. It will automatically accept challenges from the streamer's account and instructions will be sent to chat!
 
-## Bugs:
- - if the bot is restarted on its turn, it doesn't reconnect
- 	- would need to save ongoing games dictionary before it exists
- - tmi.js 'join' event is called late sometimes -> message queue doesn't work at first
+## How to vote
 
-## To-do:
- - [x] vote to offer draw
- - [x] vote to resign
- - [x] web page to put on stream that visualizes the voting process
- - [ ] multiple streamers at once! shouldn't be too hard with current setup
- 	- Update: won't work unless lichess authorizes the host ip to bypass their rate limiting
- - [x] support for different initial starting positions
- - [ ] support for variants with different rules (anti-chess, atomic, etc.)
- - [ ] blacklist moves
- - [ ] auto-reconnect when lichess is down & bot crashes
- - [ ] automatically set voting period to increment? (disallows +0 games, but do we care?)
- - [ ] Bug: offer/accept draw & resign % doesn't update on each vote, only updates when people vote for it
+- `Ne3`
+- `resign`
+- `offer draw` or `accept draw` (separate from voting to move or resign, i.e. you can both vote to draw and for a move/resign)

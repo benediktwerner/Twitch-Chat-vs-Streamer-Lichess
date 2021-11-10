@@ -31,9 +31,13 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket) => {
   socket.on('streamer', (streamer) => {
+    if (!streamer) streamer = OPTS.STREAMER_LICHESS;
     socket.join(streamer.toLowerCase());
     let game = games[gameIdFromTwitch(streamer)];
-    if (game) socket.emit('candidates', game.candidates);
+    if (game) {
+      socket.emit('status', { state: 'started' });
+      socket.emit('candidates', game.candidates);
+    }
   });
 });
 
@@ -85,7 +89,7 @@ function userIsAuthorized(username) {
   return OPTS.AUTHORIZED_USERS.includes(username);
 }
 function isBotsTurn(game) {
-  return !(game.sloppyPGN === null);
+  return game.sloppyPGN !== null;
 }
 function alreadyVoted(username, game) {
   return game.voters.has(username);
@@ -111,6 +115,9 @@ function checkMove(possibleMove, gameId) {
   else if ((result = chess.move(possibleMove, { sloppy: true }))) return result;
   else return chess.move(possibleMove.charAt(0).toUpperCase() + possibleMove.slice(1), { sloppy: true });
 }
+function emitStatus(game, data) {
+  io.to(game.streamer.twitch).emit('status', data);
+}
 function emitCandidates(game) {
   io.to(game.streamer.twitch).emit('candidates', game.candidates);
 }
@@ -125,8 +132,6 @@ function gameIdFromTwitch(twitch) {
   return false;
 }
 
-let username = 'a';
-
 client.on('message', (channel, tags, message, self) => {
   if (self) return;
 
@@ -138,11 +143,6 @@ client.on('message', (channel, tags, message, self) => {
     }
     return;
   }
-
-  if (userIsAuthorized(tags.username) && message === '!cu') {
-    username += 'a';
-  }
-  tags.username = username;
 
   channel = channel.substr(1);
   let gameId = gameIdFromTwitch(channel);
@@ -284,7 +284,11 @@ async function initiateVote(gameId, moves, revote = 0) {
   if (!game) return;
   // say(revote ? `Nobody voted for a valid move! You have ${OPTS.VOTING_PERIOD} seconds to vote again. (${revote})` : `Voting time! You have ${OPTS.VOTING_PERIOD} seconds to name a move (UCI format, ex: e2e4).`);
   if (!revote) say(`Voting time! You have ${OPTS.VOTING_PERIOD} seconds to name a move.`);
+  game.voters = new Set();
+  game.offeringDraw = new Set();
+  game.candidates = {};
   game.sloppyPGN = moves;
+  emitStatus(game, { timer: OPTS.VOTING_PERIOD });
   setTimeout(async () => {
     const game = games[gameId];
     if (!game) return;
@@ -299,10 +303,6 @@ async function initiateVote(gameId, moves, revote = 0) {
     const draw = (game.candidates.draw?.votes ?? 0) / game.candidates.total >= 0.5;
 
     game.sloppyPGN = null;
-    game.voters = new Set();
-    game.offeringDraw = new Set();
-    game.candidates = {};
-    emitCandidates(game);
 
     if (winningMove[0] === 'resign') await resignGame(gameId);
     else await makeMove(gameId, winningMove[0], draw);
@@ -313,7 +313,7 @@ async function initiateVote(gameId, moves, revote = 0) {
 async function beginGame(gameId) {
   try {
     say('Game started!', gameId);
-    games[gameId] = {
+    const game = {
       white: null,
       sloppyPGN: null,
       candidates: {},
@@ -321,6 +321,8 @@ async function beginGame(gameId) {
       offeringDraw: new Set(),
       streamer: { twitch: OPTS.STREAMER_TWITCH.toLowerCase(), lichess: OPTS.STREAMER_LICHESS },
     };
+    games[gameId] = game;
+    emitStatus(game, { state: 'started' });
     let result = await streamGameState(gameId);
     delete games[gameId];
     switch (result) {

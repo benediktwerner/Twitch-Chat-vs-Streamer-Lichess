@@ -1,7 +1,7 @@
 module.exports = {
   STREAMER_TWITCH: '',
   STREAMER_LICHESS: '',
-  AUTHORIZED_USERS: [''],
+  AUTHORIZED_USERS: [],
   BOT_TWITCH_OAUTH: 'oauth:...',
   BOT_LICHESS: '',
   BOT_LICHESS_OAUTH: 'lip_...',
