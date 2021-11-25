@@ -1,5 +1,7 @@
 # Twitch-Chat-vs-Streamer-Lichess
 
+Forked from/heavily based on [AndrewYatzkan/Twitch-Chat-vs-Streamer-Lichess](https://github.com/AndrewYatzkan/Twitch-Chat-vs-Streamer-Lichess).
+
 ## Setup:
 
 1) Install [Node.js](https://nodejs.org/en/download/).
